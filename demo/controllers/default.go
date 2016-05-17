@@ -3,10 +3,11 @@ package controllers
 import (
 	"github.com/astaxie/beego"
 	"github.com/GeeTeam/GtGoSdk"
+	"log"
 )
 
-var PrivateKey = beego.AppConfig.String("PrivateKey")
-var CaptchaID = beego.AppConfig.String("CaptchaID")
+var GtPrivateKey = beego.AppConfig.String("GtPrivateKey")
+var GtCaptchaID = beego.AppConfig.String("GtCaptchaID")
 
 type MainController struct {
 	beego.Controller
@@ -30,23 +31,25 @@ func (ctl *MainController) Get() {
 
 func (ctl *RegisterController)Get() {
 	var userID = "test"
-	gt := GtGoSdk.GeetestLib(PrivateKey, CaptchaID)
-	status := gt.PreProcess(userID)
-	ctl.SetSession(GtGoSdk.GT_STATUS_SESSION_KEY, status)
-	ctl.SetSession("user_id", userID)
-	responseStr := gt.GetResponseStr()
-	ctl.Ctx.WriteString(responseStr)
+	gt := GtGoSdk.GeetestLib(GtPrivateKey, GtCaptchaID)
+	gt.PreProcess(userID)
+	responseMap := gt.GetResponseMap()
+	ctl.Data["json"]=responseMap
+	ctl.ServeJSON()
 }
 
 func (ctl *ValidateController)Post() {
 	var result bool
 	var respstr string
-	gt := GtGoSdk.GeetestLib(PrivateKey, CaptchaID)
+	gt := GtGoSdk.GeetestLib(GtPrivateKey, GtCaptchaID)
 	challenge := ctl.GetString(GtGoSdk.FN_CHALLENGE)
 	validate := ctl.GetString(GtGoSdk.FN_VALIDATE)
 	seccode := ctl.GetString(GtGoSdk.FN_SECCODE)
-	status := ctl.GetSession(GtGoSdk.GT_STATUS_SESSION_KEY).(int)
-	userID := ctl.GetSession("user_id").(string)
+	status,err := ctl.GetInt(GtGoSdk.GT_STATUS_SESSION_KEY)
+	if err != nil{
+		log.Println(err)
+	}
+	userID := ctl.GetString("user_id")
 	if status == 0 {
 		result = gt.FailbackValidate(challenge, validate, seccode)
 	} else {
@@ -63,12 +66,15 @@ func (ctl *ValidateController)Post() {
 func (ctl *AjaxValidateController)Post(){
 	var result bool
 	var jsondata = make(map[string]string)
-	gt := GtGoSdk.GeetestLib(PrivateKey, CaptchaID)
+	gt := GtGoSdk.GeetestLib(GtPrivateKey, GtCaptchaID)
 	challenge := ctl.GetString(GtGoSdk.FN_CHALLENGE)
 	validate := ctl.GetString(GtGoSdk.FN_VALIDATE)
 	seccode := ctl.GetString(GtGoSdk.FN_SECCODE)
-	status := ctl.GetSession(GtGoSdk.GT_STATUS_SESSION_KEY).(int)
-	userID := ctl.GetSession("user_id").(string)
+	status,err := ctl.GetInt(GtGoSdk.GT_STATUS_SESSION_KEY)
+	userID := ctl.GetString("user_id")
+	if err != nil{
+		log.Println(err)
+	}
 	if status == 0 {
 		result = gt.FailbackValidate(challenge, validate, seccode)
 	} else {

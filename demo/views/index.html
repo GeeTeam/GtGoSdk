@@ -7,6 +7,7 @@
             margin: 50px 0;
             text-align: center;
         }
+
         .inp {
             border: 1px solid gray;
             padding: 0 10px;
@@ -14,6 +15,7 @@
             height: 30px;
             font-size: 18px;
         }
+
         .btn {
             border: 1px solid gray;
             width: 100px;
@@ -21,16 +23,20 @@
             font-size: 18px;
             cursor: pointer;
         }
+
         #embed-captcha {
             width: 300px;
             margin: 0 auto;
         }
+
         .show {
             display: block;
         }
+
         .hide {
             display: none;
         }
+
         #notice {
             color: red;
         }
@@ -66,6 +72,8 @@
 <script src="http://static.geetest.com/static/tools/gt.js"></script>
 
 <script>
+    var gt_server_status;
+    var user_id;
     var handlerPopup = function (captchaObj) {
         $("#popup-submit").click(function () {
             var validate = captchaObj.getValidate();
@@ -78,6 +86,8 @@
                 type: "post",
                 dataType: "json",
                 data: {
+                    gt_server_status: gt_server_status,
+                    user_id: user_id,
                     // 二次验证所需的三个值
                     geetest_challenge: validate.geetest_challenge,
                     geetest_validate: validate.geetest_validate,
@@ -104,6 +114,8 @@
         type: "get",
         dataType: "json",
         success: function (data) {
+            gt_server_status = data.success;
+            user_id = data.user_id;
             // 使用initGeetest接口
             // 参数1：配置参数
             // 参数2：回调，回调的第一个参数验证码对象，之后可以使用它做appendTo之类的事件
@@ -120,6 +132,8 @@
 <hr>
 <br><br>
 <form class="popup" action="/validate" method="post">
+    <input type="hidden" name="gt_server_status">
+    <input type="hidden" name="user_id">
     <h2>嵌入式Demo，使用表单形式提交二次验证所需的验证结果值</h2>
     <br>
     <p>
@@ -166,6 +180,8 @@
         type: "get",
         dataType: "json",
         success: function (data) {
+            $("input[name=gt_server_status]").val(data.success);
+            $("input[name=user_id]").val(data.user_id);
             // 使用initGeetest接口
             // 参数1：配置参数
             // 参数2：回调，回调的第一个参数验证码对象，之后可以使用它做appendTo之类的事件

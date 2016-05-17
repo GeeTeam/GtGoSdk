@@ -11,8 +11,8 @@ import (
 	"strings"
 	"net/url"
 	"math"
-	"log"
 	"io/ioutil"
+	"log"
 )
 
 const (
@@ -26,7 +26,7 @@ const (
 	REGISTER_HANDLER = "/register.php"
 	VALIDATE_HANDLER = "/validate.php"
 
-	VERSION = "go_3.2.0"
+	VERSION = "go_3.2.1"
 )
 
 type Geetest struct {
@@ -34,22 +34,25 @@ type Geetest struct {
 	captchaID   string
 	sdkVersion  string
 	responseStr string
+	responMap   map[string]interface{}
 }
 
 //CreateGeeTest 创建GeetestLib实例
 func GeetestLib(privateKey, captchaID string) *Geetest {
+	responMap := make(map[string]interface{})
 	return &Geetest{
 		privateKey:privateKey,
 		captchaID:captchaID,
 		sdkVersion:VERSION,
 		responseStr:"",
+		responMap:responMap,
 	}
 }
 
 //PreProcess 验证初始化预处理.
 func (gt *Geetest)PreProcess(userID string) int {
 	status, challenge := gt.register(userID)
-	gt.responseStr = gt.makeResponseFormat(status, challenge)
+	gt.makeResponseFormat(userID,status, challenge)
 	return status
 }
 
@@ -65,6 +68,10 @@ func (gt *Geetest)GetResponseStr() string {
 	return gt.responseStr
 }
 
+func (gt *Geetest)GetResponseMap() map[string]interface{} {
+	return gt.responMap
+}
+
 func (gt *Geetest)makeFailChallenge() string {
 	rand.Seed(time.Now().Unix())
 	rnd1 := rand.Intn(100)
@@ -75,13 +82,16 @@ func (gt *Geetest)makeFailChallenge() string {
 	return challenge
 }
 
-func (gt *Geetest)makeResponseFormat(status int, challenge string) string {
-	jsonmap := make(map[string]interface{})
-	jsonmap["success"] = status
-	jsonmap["gt"] = gt.captchaID
-	jsonmap["challenge"] = challenge
-	jsonbyte, _ := json.Marshal(jsonmap)
-	return string(jsonbyte)
+func (gt *Geetest)makeResponseFormat(userID string,status int, challenge string) {
+	if userID != ""{
+		gt.responMap["user_id"]= userID
+	}
+	gt.responMap["success"] = status
+	gt.responMap["gt"] = gt.captchaID
+	gt.responMap["challenge"] = challenge
+	jsonbyte, _ := json.Marshal(gt.responMap)
+	gt.responseStr = string(jsonbyte)
+	return
 }
 
 //registerChallenge
@@ -148,7 +158,6 @@ func (gt *Geetest)FailbackValidate(challenge, validate, seccode string) bool {
 		return false
 	}
 	validate_str := strings.Split(validate, "_")
-	log.Println(validate_str,len(validate_str))
 	if len(validate_str) < 3 {
 		return false
 	}
@@ -159,7 +168,6 @@ func (gt *Geetest)FailbackValidate(challenge, validate, seccode string) bool {
 	decodeFbii := gt.decodeResponse(challenge, encodeFbii)
 	decodeIgi := gt.decodeResponse(challenge, encodeIgi)
 	validateResult := gt.validateFailImage(decodeAns, decodeFbii, decodeIgi)
-	log.Println(validateResult)
 	return validateResult
 }
 

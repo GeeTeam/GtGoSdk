@@ -88,6 +88,10 @@ Gt Golang SDK
 
 发布日志
 -----------------
++ 3.2.1
+
+ - 增加GetResponseMap()接口，适用于无session环境下获得map对象
+
 + 3.2.0
 
  - 参照 `gt-python-sdk <https://github.com/GeeTeam/gt-python-sdk/>`_ 3.2.0版实现极验接口
